@@ -25,22 +25,75 @@ function PlayGround
   const params = useSearchParams();
   const frameId = params.get('frameId');
   const [frameDetail, setFrameDetail] = useState<Frame>();
-
+  const [loading, setLoading] = useState<boolean>(false);
+  const [messages, setMessages] = useState<Messages[]>([]);
+  const [generatedCode, setGeneratedCode] = useState<any>();
   useEffect(()=>{
     frameId && GetFrameDetails();
   }, [frameId])
   
   const GetFrameDetails= async() => {
     const result = await axios.get('/api/frames?frameId='+frameId+"&projectId="+projectId);
-    console.log('API RESULT:', result.data)
-  console.log('API MESSAGES:', result.data.messages)
     setFrameDetail(result.data);
+  }
+
+  const SendMessage = async (userInput:string) => {
+    setLoading(true);
+    setMessages((prev: any) => [
+      ...prev,
+      {role: 'user', content: userInput}
+    ])
+
+    const result = await fetch('/api/ai-model', {
+      method: 'POST',
+      body: JSON.stringify({
+        messages: [...messages, { role: "user", content: userInput }]
+      })
+    });
+    
+    const reader = result.body?.getReader();
+    const decoder = new TextDecoder();
+
+    let aiRespose = '';
+    let isCode = false;
+
+    while(true) {
+      //@ts-ignore
+      const {done, value} = await reader?.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value,{stream:true});
+      aiRespose+=chunk;
+
+      if(!isCode && aiRespose.includes('```html')) {
+        isCode = true;
+        const index = aiRespose.indexOf("```html") + 7;
+        const initialCodeChunk = aiRespose.slice(index);
+        setGeneratedCode((prev:any)=> prev+initialCodeChunk);
+      } else if(isCode) {
+        setGeneratedCode((prev:any)=> prev+chunk);
+      }
+    }
+    if(!isCode) {
+        setMessages((prev: any) => [
+          ...prev,
+          { role: 'assistant', content: aiRespose}
+        ])
+      } else {
+        setMessages((prev: any) => [
+          ...prev,
+          { role: 'assistant', content: 'Your code is ready!!'}
+        ])
+      }
+    setLoading(false);
   }
   return (
     <div>
         <PlaygroundHeader />
         <div className='flex'>
-            <ChatSection messages={frameDetail?.chatMessages??[]}/>
+            <ChatSection messages={messages??[]}
+            onSend={(input: string)=>SendMessage(input)}
+            />
             <WebsiteDesgin />
             <ElementSettingSection />
         </div>

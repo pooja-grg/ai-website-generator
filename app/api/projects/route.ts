@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
     })
 
     const chatResult = await db.insert(chatTable).values({
+        frameId: frameId,
+        projectId: projectId,
         chatMessage: messages,
         createdBy: user?.primaryEmailAddress?.emailAddress
     })

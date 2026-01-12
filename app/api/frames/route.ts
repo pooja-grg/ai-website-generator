@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
       .from(chatTable)
       //@ts-ignore
       .where(eq(chatTable.frameId, frameId));
+    console.log("DB Chat Result:", chatResult); 
 
     const finalResult = {
       ...frameResult[0],

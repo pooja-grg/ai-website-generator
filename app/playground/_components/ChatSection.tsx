@@ -1,12 +1,21 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { Messages } from '../[projectId]/page'
+import { Button } from '@/components/ui/button'
+import { ArrowUp } from 'lucide-react'
 
 type Props = {
-  messages: Messages[]
+  messages: Messages[],
+  onSend: any
 }
 
-function ChatSection({ messages }: Props) {
+function ChatSection({ messages, onSend }: Props) {
+  const [input, setInput] = useState<string>();
+  const handleSend = () => {
+    if(!input?.trim()) return;
+    onSend(input);
+    setInput('');
+  }
   return (
     <div className='w-96 shadow h-[90vh] p-4 flex flex-col'>
       <div className='flex-1 overflow-y-auto space-y-3 flex flex-col'>
@@ -32,6 +41,15 @@ function ChatSection({ messages }: Props) {
             </div>
           ))
         )}
+      </div>
+      <div className="p-3 border-t flex items-center gap-2">
+        <textarea 
+          value={input}
+          placeholder='Describe your website design idea'
+          className='flex-1 resize-none border rounded-lg px-3 py-2 focus:outline-none focus:ring-2'
+          onChange={(event) => setInput(event.target.value)}
+        />
+        <Button onClick={handleSend}> <ArrowUp/> </Button>
       </div>
     </div>
   )
