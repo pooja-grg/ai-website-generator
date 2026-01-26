@@ -19,6 +19,30 @@ export type Messages = {
   content: string
 }
 
+const Prompt=`userInput: {userInput}
+Create a simple, clean, and responsive website using HTML, CSS, and basic JavaScript.
+
+Pages/Sections:
+- Home (title, short description, button)
+- About (few lines about the website or person)
+- Services / Features (3 simple cards)
+- Contact (basic contact form)
+
+Design Requirements:
+- Minimal layout
+- Light color palette
+- Easy-to-read fonts
+- Mobile-friendly
+
+Functionality:
+
+- Navbar with smooth scrolling
+- Hover effects on buttons
+- Simple form validation using JavaScript
+
+Generate complete, clean code with comments, suitable for beginners.
+`
+
 function PlayGround
 () {
   const {projectId} = useParams();
@@ -35,6 +59,11 @@ function PlayGround
   const GetFrameDetails= async() => {
     const result = await axios.get('/api/frames?frameId='+frameId+"&projectId="+projectId);
     setFrameDetail(result.data);
+    if(result.data?.chatMessages?.length==1)
+    {
+      const userMsg = result.data?.chatMessages[0].content;
+      SendMessage(userMsg);
+    }
   }
 
   const SendMessage = async (userInput:string) => {
@@ -47,7 +76,7 @@ function PlayGround
     const result = await fetch('/api/ai-model', {
       method: 'POST',
       body: JSON.stringify({
-        messages: [...messages, { role: "user", content: userInput }]
+        messages: [{ role: "user", content: Prompt?.replace('{userInput}', userInput) }]
       })
     });
     
@@ -87,12 +116,17 @@ function PlayGround
       }
     setLoading(false);
   }
+
+  useEffect(() => {
+    console.log(generatedCode);
+  }, [generatedCode])
   return (
     <div>
         <PlaygroundHeader />
         <div className='flex'>
             <ChatSection messages={messages??[]}
             onSend={(input: string)=>SendMessage(input)}
+            loading={loading}
             />
             <WebsiteDesgin />
             <ElementSettingSection />
